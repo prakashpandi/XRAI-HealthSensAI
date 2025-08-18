@@ -912,7 +912,7 @@ MonoBehaviour:
   imageClassification: {fileID: 2800000, guid: 2d5fe5186c647bc4aa73be293d25a0bd, type: 3}
   imageInstanceSegmentation: {fileID: 2800000, guid: 4facd158d4203fa479f937b0acfadc1a, type: 3}
   imageKeypointsDetection: {fileID: 2800000, guid: c550f6c4c22e54f40a3caacbdb069eb7, type: 3}
-  objectDetectionModel: food-4oq56/1
+  objectDetectionModel: gp-n7jdm/4
   classificationModel: chest-x-rays-qjmia/3
   instanceSegmentationModel: road-traffic-rqbit/4
   keypointsDetectionModel: human-activity-ce7zu/2

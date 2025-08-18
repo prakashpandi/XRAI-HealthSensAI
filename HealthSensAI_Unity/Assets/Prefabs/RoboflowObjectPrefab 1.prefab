@@ -116,7 +116,7 @@ GameObject:
   - component: {fileID: 5120537885466624689}
   - component: {fileID: 3027708448991746193}
   m_Layer: 0
-  m_Name: RoboflowObjectPrefab
+  m_Name: RoboflowObjectPrefab 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -169,7 +169,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a864af4db0c94e047a1669424b44ab6d, type: 2}
+  - {fileID: 2100000, guid: 21b1166230ec5be46a1e16a94f128acd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -228,7 +228,7 @@ MonoBehaviour:
   debugTextObject: {fileID: 2180178383274072909}
   debugText: {fileID: 1654937236963533342}
   classID: 0
-  objectToSpawnPrefab: {fileID: 4598129501795045920, guid: 06b1b5b2dfc24bb42ad729379269f053, type: 3}
+  objectToSpawnPrefab: {fileID: 0}
 --- !u!1 &4947433558969283750
 GameObject:
   m_ObjectHideFlags: 0

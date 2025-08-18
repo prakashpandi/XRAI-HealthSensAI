@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 /// <summary>
 /// Represents a single object detected via Roboflow object detection.
@@ -8,13 +9,28 @@ using UnityEngine;
 public class RoboflowObject : MonoBehaviour
 {
     [Header("Roboflow Object Settings")]
-    [SerializeField] private float autoDisableDuration = 2f; // Time in seconds before this object hides itself again if not tracked.
+    [SerializeField] private float autoDisableDuration = 1000f; // Time in seconds before this object hides itself again if not tracked.
     [SerializeField] private GameObject debugTextObject; // Reference to the text GameObject (used to rotate it toward camera).
     [SerializeField] private TMPro.TextMeshProUGUI debugText; // Reference to the TextMeshPro component for displaying debug info.
 
     private string @class = "DefaultObjectName"; // The class name of the detected object (e.g. "bear", "panda").
     public int classID = 0; // The class index (optional), e.g. 0 for bear, 1 for panda.
     private Coroutine autoDisableCoroutine; // Reference to the coroutine used to delay auto-disable.
+    public float Confidence { get; set; }
+    [SerializeField] private GameObject objectToSpawnPrefab; // Assign in Inspector
+
+    public UnityEvent OnHandTrigger;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("QuestHand"))
+        {
+            Vector3 spawnPosition = transform.position + Vector3.up * 0.5f; // 0.5 units above
+            Instantiate(objectToSpawnPrefab, spawnPosition, Quaternion.identity);
+
+            OnHandTrigger?.Invoke();
+        }
+    }
 
     /// <summary>
     /// Resets this object to its initial state: disabled, zeroed position and rotation.

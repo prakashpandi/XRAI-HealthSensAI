@@ -5,6 +5,7 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 using Meta.XR;
+using TMPro;
 
 /// <summary>
 /// Handles webcam streaming, sending frames to Roboflow,
@@ -32,8 +33,8 @@ public class RoboflowCaller : MonoBehaviour
     [SerializeField] private float minConfidence = 0.8f; // Detection confidence threshold
 
     [Header("Roboflow API Configuration")]
-    [SerializeField] private string RF_MODEL = "xraihack_bears-fndxs/2"; // Model name for Roboflow
-    [SerializeField] private string LOCAL_SERVER_IP_ADDRESS = "http://10.255.38.21:9001"; // Local server URL for Roboflow
+    [SerializeField] private TMP_InputField RF_MODEL; // Model name for Roboflow
+    [SerializeField] private TMP_InputField LOCAL_SERVER_IP_ADDRESS; // Local server URL for Roboflow
     private RoboflowInferenceClient client; // API client
 
     private Texture2D result; // Texture for resized images
@@ -43,7 +44,7 @@ public class RoboflowCaller : MonoBehaviour
     private void Start()
     {
         // Initialize Roboflow client with local server URL
-        client = new RoboflowInferenceClient(APIKeys.RF_API_KEY, LOCAL_SERVER_IP_ADDRESS);
+        client = new RoboflowInferenceClient(APIKeys.RF_API_KEY, LOCAL_SERVER_IP_ADDRESS.text);
         BuildObjectPool();
 
         result = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
@@ -61,8 +62,15 @@ public class RoboflowCaller : MonoBehaviour
             var instance = Instantiate(_markerPrefab, Vector3.zero, Quaternion.identity);
             var rfObject = instance.GetComponent<RoboflowObject>();
             rfObject.Init(rfClassNames[i], rfClassIds[i]); // Initialize with class name and ID
+            rfObject.OnHandTrigger.AddListener(OnRoboflowObjectHandTrigger); // Subscribe to event
             _activeMarkerMap[rfObject.ClassID] = rfObject;
         }
+    }
+
+    private void OnRoboflowObjectHandTrigger()
+    {
+        Debug.Log("RoboflowObject hand trigger event received.");
+        // Add your custom logic here (e.g., update UI, spawn effects, etc.)
     }
 
     /// <summary>
@@ -145,7 +153,7 @@ public class RoboflowCaller : MonoBehaviour
             bool isDone = false;
             // Call Roboflow and wait for completion
             yield return StartCoroutine(client.InferObjectDetection(
-                new ObjectDetectionInferenceRequest(RF_MODEL, image),
+                new ObjectDetectionInferenceRequest(RF_MODEL.text, image),
                 response => { OnResponse(response); isDone = true; },
                 error => { Debug.Log(error); isDone = true; }
             ));
@@ -164,12 +172,57 @@ public class RoboflowCaller : MonoBehaviour
             foreach (var pred in response.Predictions)
                 Debug.Log($"Detected {pred.Class} at ({pred.X},{pred.Y}) confidence: {pred.Confidence}");
             renderDetections(response.Predictions);
+            FilterCollidingObjectsByConfidence();
         }
         else
         {
             Debug.Log("No predictions found.");
         }
     }
+
+    private void FilterCollidingObjectsByConfidence()
+    {
+        var activeObjects = new List<RoboflowObject>();
+
+        // Collect all active objects
+        foreach (var marker in _activeMarkerMap.Values)
+        {
+            if (marker.gameObject.activeSelf)
+            {
+                activeObjects.Add(marker);
+            }
+        }
+
+        // For each pair, check for collision
+        for (int i = 0; i < activeObjects.Count; i++)
+        {
+            var objA = activeObjects[i];
+            var colliderA = objA.GetComponent<Collider>();
+            if (colliderA == null) continue;
+
+            for (int j = i + 1; j < activeObjects.Count; j++)
+            {
+                var objB = activeObjects[j];
+                var colliderB = objB.GetComponent<Collider>();
+                if (colliderB == null) continue;
+
+                if (colliderA.bounds.Intersects(colliderB.bounds))
+                {
+                    // If colliding, keep only the one with higher confidence
+                    if (objA.Confidence >= objB.Confidence)
+                    {
+                        objB.Disable();
+                    }
+                    else
+                    {
+                        objA.Disable();
+                    }
+                }
+            }
+        }
+    }
+
+
 
     /// <summary>
     /// Clears all previously tracked markers.
@@ -212,11 +265,17 @@ public class RoboflowCaller : MonoBehaviour
                 continue;
             }
 
+            // Try to get an existing marker, or create a new one if missing
             RoboflowObject marker = checkForExistingMarker(prediction.Class_Id);
             if (marker == null)
             {
-                Debug.Log($"No marker assigned for class {prediction.Class_Id}");
-                continue;
+                // Instantiate a new marker for this class
+                var instance = Instantiate(_markerPrefab, Vector3.zero, Quaternion.identity);
+                marker = instance.GetComponent<RoboflowObject>();
+                marker.Init(prediction.Class, prediction.Class_Id);
+                marker.Confidence = prediction.Confidence;
+                _activeMarkerMap[prediction.Class_Id] = marker;
+                Debug.Log($"Instantiated new marker for class {prediction.Class_Id}");
             }
 
             // Convert center to pixel space
@@ -225,7 +284,10 @@ public class RoboflowCaller : MonoBehaviour
             float perX = (adjustedCenterX + halfWidth) / targetWidth;
             float perY = (adjustedCenterY + halfHeight) / targetHeight;
             Vector2 centerPixel = new Vector2(perX * camRes.x, (1.0f - perY) * camRes.y);
-            Ray centerRay = PassthroughCameraUtils.ScreenPointToRayInWorld(webCamTextureManager.Eye, new Vector2Int(Mathf.RoundToInt(centerPixel.x), Mathf.RoundToInt(centerPixel.y)));
+            Ray centerRay = PassthroughCameraUtils.ScreenPointToRayInWorld(
+                webCamTextureManager.Eye,
+                new Vector2Int(Mathf.RoundToInt(centerPixel.x), Mathf.RoundToInt(centerPixel.y))
+            );
 
             if (!envRaycastManager.Raycast(centerRay, out var centerHit))
             {
@@ -240,4 +302,5 @@ public class RoboflowCaller : MonoBehaviour
             Debug.Log($"Placed marker {i} at {markerWorldPos}");
         }
     }
+
 }

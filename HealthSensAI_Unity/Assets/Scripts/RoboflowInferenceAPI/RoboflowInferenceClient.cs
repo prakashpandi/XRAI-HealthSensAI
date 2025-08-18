@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 public class RoboflowInferenceClient
 {
-    private string baseUrl = "http://10.255.38.21:9001";
+    private string baseUrl = "http://localhost:9001";
     private string global_api_Key = "";
 
     public void setBaseUrl(string url)
