@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,12 +12,24 @@ public class RoboflowObject : MonoBehaviour
     [SerializeField] private float autoDisableDuration = 1000f; // Time in seconds before this object hides itself again if not tracked.
     [SerializeField] private GameObject debugTextObject; // Reference to the text GameObject (used to rotate it toward camera).
     [SerializeField] private TMPro.TextMeshProUGUI debugText; // Reference to the TextMeshPro component for displaying debug info.
+    [SerializeField] private GameObject objectToSpawnPrefab; // Assign in Inspector
+    [SerializeField] private UnityEngine.UI.RawImage croppedImageDisplay; // Assign in Inspector
+
+    [Header("Tracked For 3 Seconds")]
+    [SerializeField] private GameObject trackedPrefab; // Prefab to instantiate after 3 seconds of tracking
+    [SerializeField] private Vector3 trackedSpawnPosition = new Vector3(0, 2, 0); // Fixed position for spawning trackedPrefab
 
     private string @class = "DefaultObjectName"; // The class name of the detected object (e.g. "bear", "panda").
     public int classID = 0; // The class index (optional), e.g. 0 for bear, 1 for panda.
     private Coroutine autoDisableCoroutine; // Reference to the coroutine used to delay auto-disable.
+    private Coroutine trackedCoroutine; // Reference to the coroutine for 3 seconds tracking
     public float Confidence { get; set; }
-    [SerializeField] private GameObject objectToSpawnPrefab; // Assign in Inspector
+    private NutritionAnalyzer analyzer; // Assign in Inspector
+    public Texture2D CroppedTexture { get; set; }
+
+    private bool isTrackedRoutineStarted = false;
+
+
 
     public UnityEvent OnHandTrigger;
 
@@ -42,6 +54,8 @@ public class RoboflowObject : MonoBehaviour
         this.gameObject.transform.rotation = Quaternion.identity;
         this.@class = @class;
         this.classID = classId;
+        if (analyzer == null) analyzer = GetComponent<NutritionAnalyzer>();
+        isTrackedRoutineStarted = false;
     }
 
     /// <summary>
@@ -61,7 +75,17 @@ public class RoboflowObject : MonoBehaviour
         {
             debugText.text = text;
         }
+        ApplyCroppedTextureToUI();
     }
+
+    public void ApplyCroppedTextureToUI()
+    {
+        if (croppedImageDisplay != null && CroppedTexture != null)
+        {
+            croppedImageDisplay.texture = CroppedTexture;
+        }
+    }
+
 
     /// <summary>
     /// Enables the object
@@ -77,6 +101,7 @@ public class RoboflowObject : MonoBehaviour
     public void Disable()
     {
         this.gameObject.SetActive(false);
+        isTrackedRoutineStarted = false;
     }
 
     /// <summary>
@@ -94,9 +119,15 @@ public class RoboflowObject : MonoBehaviour
         {
             StopCoroutine(autoDisableCoroutine);
         }
-
         autoDisableCoroutine = StartCoroutine(AutoDisableAfterDelay());
+
+        if (!isTrackedRoutineStarted)
+        {
+            trackedCoroutine = StartCoroutine(TrackedFor3SecondsRoutine());
+            isTrackedRoutineStarted = true;
+        }
     }
+
 
     /// <summary>
     /// Coroutine that waits a few seconds and then disables the object.
@@ -105,5 +136,35 @@ public class RoboflowObject : MonoBehaviour
     {
         yield return new WaitForSeconds(autoDisableDuration);
         Disable();
+    }
+
+    /// <summary>
+    /// Coroutine that instantiates trackedPrefab at a fixed position if tracked for 3 seconds.
+    /// </summary>
+    private IEnumerator TrackedFor3SecondsRoutine()
+    {
+        yield return new WaitForSeconds(3f);
+        if (this.gameObject.activeSelf && trackedPrefab != null)
+        {
+            Debug.Log("Tracked for 3 seconds");
+            Instantiate(trackedPrefab, transform.position, transform.rotation);
+            if (CroppedTexture != null && analyzer != null)
+            {
+                byte[] imgBytes = CroppedTexture.EncodeToPNG();
+                string base64Image = System.Convert.ToBase64String(imgBytes);
+
+                StartCoroutine(analyzer.AnalyzeImage(
+                    base64Image,
+                    (nutrition) =>
+                    {
+                        debugText.text = "✅ Nutrition Info:\n" + nutrition.ToString();
+                    },
+                    (error) =>
+                    {
+                        debugText.text = "❌ " + error;
+                    }
+                ));
+            }
+        }
     }
 }

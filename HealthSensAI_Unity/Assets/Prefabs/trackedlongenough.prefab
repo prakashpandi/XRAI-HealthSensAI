@@ -116,7 +116,7 @@ GameObject:
   - component: {fileID: 5120537885466624689}
   - component: {fileID: 3027708448991746193}
   m_Layer: 0
-  m_Name: RoboflowObjectPrefab 1
+  m_Name: trackedlongenough
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -132,7 +132,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2682978291319121674}
@@ -219,7 +219,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4598129501795045920}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4d5c548e272af1459eed801e36249fa, type: 3}
   m_Name: 
@@ -227,8 +227,13 @@ MonoBehaviour:
   autoDisableDuration: 2
   debugTextObject: {fileID: 2180178383274072909}
   debugText: {fileID: 1654937236963533342}
-  classID: 0
   objectToSpawnPrefab: {fileID: 0}
+  trackedPrefab: {fileID: 0}
+  trackedSpawnPosition: {x: 0, y: 2, z: 0}
+  classID: 0
+  OnHandTrigger:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4947433558969283750
 GameObject:
   m_ObjectHideFlags: 0

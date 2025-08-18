@@ -274,6 +274,7 @@ public class RoboflowCaller : MonoBehaviour
                 marker = instance.GetComponent<RoboflowObject>();
                 marker.Init(prediction.Class, prediction.Class_Id);
                 marker.Confidence = prediction.Confidence;
+                marker.CroppedTexture = CropWebcamTexture(webCamTextureManager.WebCamTexture, prediction);
                 _activeMarkerMap[prediction.Class_Id] = marker;
                 Debug.Log($"Instantiated new marker for class {prediction.Class_Id}");
             }
@@ -302,5 +303,23 @@ public class RoboflowCaller : MonoBehaviour
             Debug.Log($"Placed marker {i} at {markerWorldPos}");
         }
     }
+
+    private Texture2D CropWebcamTexture(WebCamTexture webcamTexture, ObjectDetectionPrediction prediction)
+    {
+        if (webcamTexture == null || !webcamTexture.isPlaying)
+            return null;
+
+        int x = Mathf.Clamp((int)(prediction.X - prediction.Width / 2), 0, webcamTexture.width - 1);
+        int y = Mathf.Clamp((int)(prediction.Y - prediction.Height / 2), 0, webcamTexture.height - 1);
+        int width = Mathf.Clamp((int)prediction.Width, 1, webcamTexture.width - x);
+        int height = Mathf.Clamp((int)prediction.Height, 1, webcamTexture.height - y);
+
+        Color[] pixels = webcamTexture.GetPixels(x, y, width, height);
+        Texture2D cropped = new Texture2D(width, height, TextureFormat.RGB24, false);
+        cropped.SetPixels(pixels);
+        cropped.Apply();
+        return cropped;
+    }
+
 
 }

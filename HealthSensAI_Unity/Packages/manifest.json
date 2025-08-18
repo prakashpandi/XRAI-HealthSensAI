@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
     "com.meta.xr.sdk.all": "77.0.0",
     "com.srcnalt.openai-unity": "https://github.com/srcnalt/OpenAI-Unity.git",
     "com.unity.2d.sprite": "1.0.0",
